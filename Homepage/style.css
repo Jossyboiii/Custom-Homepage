@@ -1,0 +1,160 @@
+html {
+  align-items: center;
+  background: url('assets/giphy.gif') no-repeat center center fixed;
+  background-size: cover;
+  color: #c5c8c6;
+  display: flex;
+  font: 22px/1 "Inconsolata", monospace;
+  height: 100%;
+  justify-content: center;
+  backdrop-filter: blur(1px); /* Add a slight blur effect */
+}
+
+body {
+  background: rgba(0, 0, 0, 0.95);
+  border-radius: 2px;
+  box-shadow: 1px 1px 6px #1a1a1d;
+  color: #c5c8c6;
+  display: flex;
+  flex-direction: column;
+  min-height: 30ch;
+  min-width: 50vw;
+  padding: 2em;
+  position: relative;
+}
+
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#search-container {
+  margin-top: 10px;
+  position: relative;
+}
+
+#search-bar {
+  background: none;
+  border: none;
+  border-bottom: 2px solid #FFEE00; /* Yellow underline */
+  color: #c5c8c6;
+  font-size: 22px;
+  outline: none;
+  margin-left: 15px;
+}
+
+}
+
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#clock {
+  color: #FFEE00; /* Clock color */
+}
+
+.top-right {
+  margin-right: 10px; /* Adjust margin as needed */
+}
+
+}
+    p {
+      margin: 0;
+    }
+
+    p span {
+      color: #FFEE00;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.3s ease-in-out; /* Add a smooth color transition */
+    }
+
+    a:hover {
+      font-weight: bold;
+      color: #FFEE00; /* Change color on hover */
+    }
+
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      column-gap: 2em;
+      display: grid;
+      grid-template-columns: auto auto auto auto;
+      padding: 1em 0;
+    }
+
+    /* Unique hover effects for each navigation area */
+    .entertainment:hover .entertainment-items,
+    .social:hover .social-items,
+    .google:hover .google-items,
+    .utility:hover .utility-items {
+      opacity: 1; /* Show list items on hover over the navigation */
+    }
+
+    .entertainment li:first-child {
+      color: #FFEE00; /* Unique color for entertainment area name */
+    }
+
+    .social li:first-child {
+      color: #FBB806; /* Unique color for social area name */
+    }
+
+    .google li:first-child {
+      color: #F6830C; /* Unique color for google area name */
+    }
+
+    .utility li:first-child {
+      color: #F24D11; /* Unique color for utility area name */
+    }
+
+    .entertainment-items,
+    .social-items,
+    .google-items,
+    .utility-items {
+      opacity: 0.5; /* Initially hide list items */
+      transition: opacity 0.5s ease-in-out; /* Add a smooth opacity transition */
+    }
+
+    .entertainment-items:hover a {
+      color: #FFEE00; /* Coherent hover color for entertainment items */
+    }
+
+    .social-items:hover a {
+      color: #FBB806; /* Coherent hover color for social items */
+    }
+
+    .google-items:hover a {
+      color: #F6830C; /* Coherent hover color for google items */
+    }
+
+    .utility-items:hover a {
+      color: #F24D11; /* Coherent hover color for utility items */
+    }
+
+    li:first-child {
+      font-weight: bold;
+    }
+
+    li:last-child {
+      margin: 0 0 1em;
+    }
+
+    p #cursor {
+      background-color: #FFEE00;
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 0; }
+      50% { opacity: 1; }
+    }
