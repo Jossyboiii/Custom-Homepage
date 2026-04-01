@@ -2,6 +2,8 @@
 
 A minimal, terminal-style personal browser homepage built with vanilla HTML, CSS and JS.
 
+![preview](preview.png)
+
 ## Features
 
 - Time-aware greeting that types itself out on load (good morning / afternoon / evening / good night)
