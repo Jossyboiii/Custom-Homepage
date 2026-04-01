@@ -1,6 +1,16 @@
-# Custom-Homepage
+# Custom Homepage
 
-A minimal terminal-style browser homepage.
+A minimal, terminal-style personal browser homepage built with vanilla HTML, CSS and JS.
+
+## Features
+
+- Time-aware greeting that types itself out on load (good morning / afternoon / evening / good night)
+- Custom blinking cursor that hides while typing
+- Live clock
+- Organised bookmark columns with hover-to-reveal links
+- Persistent bookmarks via localStorage — add, edit and delete links and categories without touching the code
+- `/settings` command to open the bookmark manager
+- Animated gear-free, distraction-free layout
 
 ## Setup
 
@@ -13,7 +23,7 @@ A minimal terminal-style browser homepage.
 
 ## Usage
 
-- Type `/settings` in the header to manage bookmarks
+- Type `/settings` in the header and hit Enter to manage bookmarks
 
 ## Notes
 
