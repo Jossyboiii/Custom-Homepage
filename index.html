@@ -1,0 +1,73 @@
+<!--
+       __                      __          _ _ _ 
+      / /___  ____________  __/ /_  ____  (_|_|_)
+ __  / / __ \/ ___/ ___/ / / / __ \/ __ \/ / / / 
+/ /_/ / /_/ (__  |__  ) /_/ / /_/ / /_/ / / / /  
+\____/\____/____/____/\__, /_.___/\____/_/_/_/   
+                     /____/                      
+-->
+
+<!DOCTYPE html>
+<html lang="en" style="background-color: #111;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+  <title>Homepage</title>
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+</head>
+
+<body>
+
+  <div id="header">
+    <p>
+      <span id="greeting"></span><span id="cursor">_</span>
+      <input type="text" id="cmd" autocomplete="off" spellcheck="false">
+    </p>
+    <div id="clock"></div>
+  </div>
+
+  <nav id="nav"></nav>
+
+  <!-- Settings overlay -->
+  <div id="settings-overlay">
+    <div id="settings-panel">
+
+      <div id="settings-header">
+        <span>// settings</span>
+        <span id="settings-hint">esc to close</span>
+      </div>
+
+      <div id="settings-body">
+
+        <!-- Category list -->
+        <div id="cat-list-section">
+          <div class="section-label">categories</div>
+          <div id="cat-list"></div>
+          <div class="input-row" id="add-cat-row">
+            <input type="text" id="new-cat-name" placeholder="category name">
+            <button class="action-btn" id="add-cat-btn">+ add</button>
+          </div>
+        </div>
+
+        <!-- Link editor -->
+        <div id="link-editor" class="hidden">
+          <div class="section-label">
+            <button id="back-btn">← back</button>
+            <span id="editing-cat-name"></span>
+          </div>
+          <div id="link-list"></div>
+          <div class="input-row">
+            <input type="text" id="new-link-label" placeholder="label">
+            <input type="text" id="new-link-url" placeholder="https://...">
+            <button class="action-btn" id="add-link-btn">+ add</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
