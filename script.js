@@ -139,7 +139,6 @@ function updateClock() {
 // ── Command input ──────────────────────────────────────────────────────────────
 function initCmd() {
   const cursor = document.getElementById('cursor');
-  const mirror = document.getElementById('cmd-mirror');
   const cmd    = document.getElementById('cmd');
 
   cmd.addEventListener('input', () => {
@@ -149,7 +148,7 @@ function initCmd() {
   cmd.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = cmd.value.trim();
-      if (val === '/settings') {
+      if (val === '/bookmarks') {
         cmd.value = '';
         cursor.style.visibility = 'visible';
         openSettings();
@@ -181,6 +180,52 @@ function showCatList() {
   renderCatList();
 }
 
+// ── Drag-and-drop ──────────────────────────────────────────────────────────────
+let dragSrcIndex = null;
+let dragContext  = null; // 'cats' or 'links'
+
+function makeDraggable(row, index, context, onReorder) {
+  row.setAttribute('draggable', true);
+  row.dataset.index = index;
+
+  row.addEventListener('dragstart', e => {
+    dragSrcIndex = index;
+    dragContext  = context;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    // ghost image offset so it doesn't snap to corner
+    e.dataTransfer.setDragImage(row, 16, row.offsetHeight / 2);
+  });
+
+  row.addEventListener('dragend', () => {
+    dragSrcIndex = null;
+    dragContext  = null;
+    row.classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+  });
+
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (dragContext === context && dragSrcIndex !== index) {
+      document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    }
+  });
+
+  row.addEventListener('dragleave', () => {
+    row.classList.remove('drag-over');
+  });
+
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    row.classList.remove('drag-over');
+    if (dragContext === context && dragSrcIndex !== null && dragSrcIndex !== index) {
+      onReorder(dragSrcIndex, index);
+    }
+  });
+}
+
+// ── Category list ──────────────────────────────────────────────────────────────
 function renderCatList() {
   const cats      = loadCategories();
   const container = document.getElementById('cat-list');
@@ -190,31 +235,80 @@ function renderCatList() {
     const row = document.createElement('div');
     row.className = 'settings-row';
 
-    const name = document.createElement('span');
-    name.className = 'cat-name';
-    name.textContent = cat.name;
-    name.style.color = cat.color;
+    const handle = document.createElement('span');
+    handle.className  = 'drag-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Drag to reorder';
 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'icon-btn';
-    editBtn.textContent = 'edit';
-    editBtn.onclick = () => showLinkEditor(i);
+    const nameEl = document.createElement('span');
+    nameEl.className   = 'cat-name';
+    nameEl.textContent = cat.name;
+    nameEl.style.color = cat.color;
+    nameEl.title       = 'Click to rename';
+    nameEl.addEventListener('click', () => startRenameCategory(i, nameEl, cat.color));
+
+    const linksBtn = document.createElement('button');
+    linksBtn.className   = 'icon-btn';
+    linksBtn.textContent = 'links';
+    linksBtn.title       = 'Edit links';
+    linksBtn.onclick     = () => showLinkEditor(i);
 
     const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn danger';
+    delBtn.className   = 'icon-btn danger';
     delBtn.textContent = 'del';
-    delBtn.onclick = () => {
-      const cats = loadCategories();
-      cats.splice(i, 1);
-      saveCategories(cats);
+    delBtn.title       = 'Delete folder';
+    delBtn.onclick     = () => {
+      if (!confirm(`Delete "${cat.name}"?`)) return;
+      const c = loadCategories();
+      c.splice(i, 1);
+      saveCategories(c);
       renderCatList();
       renderNav();
     };
 
-    row.appendChild(name);
-    row.appendChild(editBtn);
+    row.appendChild(handle);
+    row.appendChild(nameEl);
+    row.appendChild(linksBtn);
     row.appendChild(delBtn);
     container.appendChild(row);
+
+    makeDraggable(row, i, 'cats', (from, to) => {
+      const c = loadCategories();
+      const [moved] = c.splice(from, 1);
+      c.splice(to, 0, moved);
+      saveCategories(c);
+      renderCatList();
+      renderNav();
+    });
+  });
+}
+
+function startRenameCategory(i, nameEl, color) {
+  const input = document.createElement('input');
+  input.type      = 'text';
+  input.value     = nameEl.textContent;
+  input.className = 'inline-input rename-input';
+  input.style.color = color;
+  nameEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    const val = input.value.trim();
+    if (val) {
+      const c = loadCategories();
+      c[i].name = val;
+      c[i].id   = val.toLowerCase().replace(/\s+/g, '-');
+      saveCategories(c);
+      renderNav();
+    }
+    renderCatList();
+  };
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { renderCatList(); }
   });
 }
 
@@ -232,12 +326,18 @@ function addCategory() {
   renderNav();
 }
 
+// ── Link editor ────────────────────────────────────────────────────────────────
 function showLinkEditor(catIndex) {
   editingCatIndex = catIndex;
   const cats = loadCategories();
+
   document.getElementById('cat-list-section').classList.add('hidden');
   document.getElementById('link-editor').classList.remove('hidden');
-  document.getElementById('editing-cat-name').textContent = cats[catIndex].name;
+
+  const nameEl = document.getElementById('editing-cat-name');
+  nameEl.textContent = cats[catIndex].name;
+  nameEl.style.color = cats[catIndex].color;
+
   renderLinkList(catIndex);
 }
 
@@ -251,43 +351,60 @@ function renderLinkList(catIndex) {
     const row = document.createElement('div');
     row.className = 'settings-row';
 
+    const handle = document.createElement('span');
+    handle.className   = 'drag-handle';
+    handle.textContent = '⠿';
+    handle.title       = 'Drag to reorder';
+
     const labelInput = document.createElement('input');
-    labelInput.type      = 'text';
-    labelInput.value     = link.label;
-    labelInput.className = 'inline-input';
-    labelInput.onchange  = () => {
-      const cats = loadCategories();
-      cats[catIndex].links[li].label = labelInput.value;
-      saveCategories(cats);
+    labelInput.type        = 'text';
+    labelInput.value       = link.label;
+    labelInput.className   = 'inline-input';
+    labelInput.placeholder = 'label';
+    labelInput.onchange    = () => {
+      const c = loadCategories();
+      c[catIndex].links[li].label = labelInput.value;
+      saveCategories(c);
       renderNav();
     };
 
     const urlInput = document.createElement('input');
-    urlInput.type      = 'text';
-    urlInput.value     = link.url;
-    urlInput.className = 'inline-input url-input';
-    urlInput.onchange  = () => {
-      const cats = loadCategories();
-      cats[catIndex].links[li].url = urlInput.value;
-      saveCategories(cats);
+    urlInput.type        = 'text';
+    urlInput.value       = link.url;
+    urlInput.className   = 'inline-input url-input';
+    urlInput.placeholder = 'https://...';
+    urlInput.onchange    = () => {
+      const c = loadCategories();
+      c[catIndex].links[li].url = urlInput.value;
+      saveCategories(c);
       renderNav();
     };
 
     const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn danger';
+    delBtn.className   = 'icon-btn danger';
     delBtn.textContent = 'del';
-    delBtn.onclick = () => {
-      const cats = loadCategories();
-      cats[catIndex].links.splice(li, 1);
-      saveCategories(cats);
+    delBtn.onclick     = () => {
+      const c = loadCategories();
+      c[catIndex].links.splice(li, 1);
+      saveCategories(c);
       renderLinkList(catIndex);
       renderNav();
     };
 
+    row.appendChild(handle);
     row.appendChild(labelInput);
     row.appendChild(urlInput);
     row.appendChild(delBtn);
     container.appendChild(row);
+
+    makeDraggable(row, li, 'links', (from, to) => {
+      const c = loadCategories();
+      const [moved] = c[catIndex].links.splice(from, 1);
+      c[catIndex].links.splice(to, 0, moved);
+      saveCategories(c);
+      renderLinkList(catIndex);
+      renderNav();
+    });
   });
 }
 

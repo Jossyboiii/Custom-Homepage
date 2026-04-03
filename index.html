@@ -20,6 +20,10 @@
 
 <body>
 
+  <video id="bg-video" autoplay muted loop playsinline>
+    <source src="assets/background.mp4" type="video/mp4">
+  </video>
+
   <div id="header">
     <p>
       <span id="greeting"></span><span id="cursor">_</span>
@@ -30,12 +34,12 @@
 
   <nav id="nav"></nav>
 
-  <!-- Settings overlay -->
+  <!-- Bookmarks manager overlay -->
   <div id="settings-overlay">
     <div id="settings-panel">
 
       <div id="settings-header">
-        <span>// settings</span>
+        <span>// bookmarks</span>
         <span id="settings-hint">esc to close</span>
       </div>
 
@@ -43,10 +47,10 @@
 
         <!-- Category list -->
         <div id="cat-list-section">
-          <div class="section-label">categories</div>
+          <div class="section-label">folders</div>
           <div id="cat-list"></div>
           <div class="input-row" id="add-cat-row">
-            <input type="text" id="new-cat-name" placeholder="category name">
+            <input type="text" id="new-cat-name" placeholder="folder name">
             <button class="action-btn" id="add-cat-btn">+ add</button>
           </div>
         </div>
