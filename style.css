@@ -16,7 +16,7 @@ html {
   object-fit: cover;
   z-index: -1;
   filter: blur(1px);
-  transform: scale(1.02); /* hides blur edges */
+  transform: scale(1.02);
 }
 
 body {
@@ -241,9 +241,7 @@ nav ul li:last-child  { margin: 0 0 1em; }
 
 .settings-row:last-child { border-bottom: none; }
 
-.settings-row.dragging {
-  opacity: 0.4;
-}
+.settings-row.dragging  { opacity: 0.4; }
 
 .settings-row.drag-over {
   background: #222;
@@ -266,7 +264,7 @@ nav ul li:last-child  { margin: 0 0 1em; }
 .settings-row:hover .drag-handle { color: #555; }
 .drag-handle:active { cursor: grabbing; }
 
-/* ── Category name (clickable to rename) ── */
+/* ── Category name ── */
 .cat-name {
   flex: 1;
   font-size: 15px;
@@ -276,9 +274,7 @@ nav ul li:last-child  { margin: 0 0 1em; }
   transition: background 0.15s;
 }
 
-.cat-name:hover {
-  background: #222;
-}
+.cat-name:hover { background: #222; }
 
 .cat-name::after {
   content: ' ✎';
@@ -289,7 +285,7 @@ nav ul li:last-child  { margin: 0 0 1em; }
 
 .cat-name:hover::after { opacity: 0.4; }
 
-/* ── Rename input (replaces cat-name span) ── */
+/* ── Rename input ── */
 .rename-input {
   flex: 1 !important;
   font-size: 15px !important;
@@ -376,7 +372,6 @@ nav ul li:last-child  { margin: 0 0 1em; }
 
 #back-btn:hover { opacity: 1; }
 
-/* ── Editing cat name in link editor header ── */
 #editing-cat-name {
   font-size: 13px;
   font-weight: bold;
