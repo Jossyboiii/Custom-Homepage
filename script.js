@@ -1,43 +1,90 @@
-// ── Data source ────────────────────────────────────────────────────────────────
-// data.json is the source of truth.
-// On first load, "saved" block is seeded into localStorage.
-// All subsequent changes write to localStorage only.
-// /export downloads current state as data.json.
-// /import reads a data.json and writes it to localStorage.
-// /reset clears localStorage and reverts to data.json defaults.
+// ── Inlined defaults ───────────────────────────────────────────────────────────
+// No fetch('./data.json') — file:// blocks it. Everything lives here.
+// To update defaults for new installs, edit these constants and push to GitHub.
 
-let _jsonData = null;
+const DEFAULT_SETTINGS = { name: 'Jay', backgroundUrl: '' };
 
-async function fetchJsonData() {
-  if (_jsonData) return _jsonData;
-  try {
-    const res = await fetch('./data.json');
-    _jsonData = await res.json();
-    return _jsonData;
-  } catch {
-    return null;
+const DEFAULT_CATEGORIES = [
+  {
+    id: 'general', name: 'General', color: '#FFB401',
+    links: [
+      { label: 'youtube', url: 'https://www.youtube.com/' },
+      { label: 'twitch',  url: 'https://www.twitch.tv/' },
+      { label: 'gmail',   url: 'https://mail.google.com/mail/u/0/#inbox/' },
+      { label: 'canva',   url: 'https://www.canva.com/' },
+      { label: 'github',  url: 'https://github.com/Jossyboiii/' },
+    ]
   }
-}
+];
+
+// Your full saved config — seeded into localStorage on first load.
+// After making changes via /bookmarks, use /export to download a new data.json,
+// then copy the "saved.categories" block back here to keep Git in sync.
+const SAVED_CATEGORIES = [
+  {
+    id: 'entertainment', name: 'Entertainment', color: '#FFB401',
+    links: [
+      { label: 'aniwatchtv',  url: 'https://aniwatchtv.to' },
+      { label: 'twitch',      url: 'https://www.twitch.tv/' },
+      { label: 'youtube',     url: 'https://www.youtube.com/' },
+      { label: 'kisscartoon', url: 'https://kisscartoon.sh/kisscartoon.html' },
+      { label: 'flixmomo',    url: 'https://flixmomo.org/' },
+    ]
+  },
+  {
+    id: 'social', name: 'Social', color: '#F39A05',
+    links: [
+      { label: 'facebook',  url: 'https://www.facebook.com/?locale=fr_FR' },
+      { label: 'instagram', url: 'https://www.instagram.com/' },
+      { label: 'snapchat',  url: 'https://web.snapchat.com/' },
+      { label: 'twitter',   url: 'https://twitter.com/home/' },
+    ]
+  },
+  {
+    id: 'google', name: 'Google', color: '#D34B08',
+    links: [
+      { label: 'docs',   url: 'https://docs.google.com/document/u/0/' },
+      { label: 'drive',  url: 'https://drive.google.com/drive/my-drive' },
+      { label: 'gmail',  url: 'https://mail.google.com/mail/u/0/#inbox/' },
+      { label: 'photos', url: 'https://photos.google.com/' },
+    ]
+  },
+  {
+    id: 'utility', name: 'Utility', color: '#C2240B',
+    links: [
+      { label: 'ASCII',     url: 'https://patorjk.com/software/taag/#p=display&f=Alpha&t=Jossyboiii/' },
+      { label: 'bitwarden', url: 'https://vault.bitwarden.com/#/login' },
+      { label: 'canva',     url: 'https://www.canva.com/' },
+      { label: 'chatgpt',   url: 'https://chat.openai.com/' },
+      { label: 'claude',    url: 'https://claude.ai/' },
+      { label: 'github',    url: 'https://github.com/Jossyboiii/' },
+    ]
+  },
+  {
+    id: 'school', name: 'School', color: '#B70B0D',
+    links: [
+      { label: 'ucas', url: 'https://www.ucas.com/dashboard#/' },
+      { label: 'uob',  url: 'https://evsipr.brighton.ac.uk/urd/sits.urd/run/siw_portal.url?OZOEKEGIWI5XNOBH46arS2w4c_fLkJkoI0ADnGS0hyRK0CYTHgdehhDJggLFn3Af5xdx2QIysjYsl8nDhwnKz4Pq3WIUTy9HzjBEglCRqDcMUe6wg7mgprVRxrMTslfvevyXrS3AfbUihnGOxlgRVRoLKcvqc2PiKgUX70V6ZUAWHDlO0bsZnXKHykjkv2NVmgQTHvuBLcc0Z1_3IH4Tscb_NXm2EUfOEveBZ2KwNecUPu6r' },
+    ]
+  },
+];
+
+const SAVED_SETTINGS = { name: 'Jay', backgroundUrl: '' };
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────────
-async function bootstrap() {
-  const json = await fetchJsonData();
-  if (!json) return;
-
+function bootstrap() {
   if (!localStorage.getItem('bookmarks')) {
-    const src = json.saved || json.defaults;
-    localStorage.setItem('bookmarks', JSON.stringify(src.categories));
+    localStorage.setItem('bookmarks', JSON.stringify(SAVED_CATEGORIES));
   }
   if (!localStorage.getItem('userSettings')) {
-    const src = json.saved || json.defaults;
-    localStorage.setItem('userSettings', JSON.stringify(src.settings));
+    localStorage.setItem('userSettings', JSON.stringify(SAVED_SETTINGS));
   }
 }
 
 // ── Storage ────────────────────────────────────────────────────────────────────
 function loadCategories() {
   const stored = localStorage.getItem('bookmarks');
-  return stored ? JSON.parse(stored) : [];
+  return stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(SAVED_CATEGORIES));
 }
 
 function saveCategories(cats) {
@@ -46,7 +93,7 @@ function saveCategories(cats) {
 
 function loadUserSettings() {
   const stored = localStorage.getItem('userSettings');
-  return stored ? JSON.parse(stored) : { name: 'Jay', backgroundUrl: '' };
+  return stored ? JSON.parse(stored) : { ...DEFAULT_SETTINGS };
 }
 
 function saveUserSettings(settings) {
@@ -54,14 +101,13 @@ function saveUserSettings(settings) {
 }
 
 // ── Export ─────────────────────────────────────────────────────────────────────
-async function exportConfig() {
-  const json = await fetchJsonData();
+// Downloads current localStorage state as data.json.
+// To make changes permanent on Git: open the file, copy the "saved" block,
+// and paste it into SAVED_CATEGORIES / SAVED_SETTINGS above.
+function exportConfig() {
   const payload = {
-    defaults: json ? json.defaults : null,
-    saved: {
-      settings:   loadUserSettings(),
-      categories: loadCategories()
-    }
+    defaults: { settings: DEFAULT_SETTINGS, categories: DEFAULT_CATEGORIES },
+    saved:    { settings: loadUserSettings(), categories: loadCategories() }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -85,8 +131,7 @@ function importConfig() {
         const src  = json.saved || json.defaults;
         if (!src || !src.categories) throw new Error('invalid');
         localStorage.setItem('bookmarks',    JSON.stringify(src.categories));
-        localStorage.setItem('userSettings', JSON.stringify(src.settings || { name: 'Jay', backgroundUrl: '' }));
-        _jsonData = json;
+        localStorage.setItem('userSettings', JSON.stringify(src.settings || { ...DEFAULT_SETTINGS }));
         applyBackground(); typeGreeting(); renderNav();
         showCmdOutput('config imported');
       } catch {
@@ -99,12 +144,9 @@ function importConfig() {
 }
 
 // ── Reset ──────────────────────────────────────────────────────────────────────
-async function resetToDefaults() {
-  const json = await fetchJsonData();
-  if (!json) { showCmdOutput('err: could not load data.json', true); return; }
-  const src = json.defaults;
-  localStorage.setItem('bookmarks',    JSON.stringify(src.categories));
-  localStorage.setItem('userSettings', JSON.stringify(src.settings));
+function resetToDefaults() {
+  localStorage.setItem('bookmarks',    JSON.stringify(DEFAULT_CATEGORIES));
+  localStorage.setItem('userSettings', JSON.stringify(DEFAULT_SETTINGS));
   applyBackground(); typeGreeting(); renderNav();
   showCmdOutput('reset to defaults');
 }
@@ -267,7 +309,10 @@ function timerDone() {
   if (bar)  bar.style.width = '100%';
   if (disp) disp.textContent = '00:00';
   const notif = document.getElementById('timer-notif');
-  if (notif) { notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 5000); }
+  if (notif) {
+    notif.style.display = 'block';
+    setTimeout(() => { notif.style.display = 'none'; }, 5000);
+  }
 }
 
 function showTimerUI() { document.getElementById('timer-section').style.display = 'block'; }
@@ -319,16 +364,16 @@ function initCmd() {
 
   cmd.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      const val = cmd.value.trim();
+      const val  = cmd.value.trim();
       const clear = () => { cmd.value = ''; cursor.style.visibility = 'visible'; };
 
       if (val === '/bookmarks') { clear(); openSettings(); return; }
       if (val === '/settings')  { clear(); openUserSettings(); return; }
       if (val === '/export')    { clear(); exportConfig(); return; }
       if (val === '/import')    { clear(); importConfig(); return; }
-      if (val === '/reset')     {
+      if (val === '/reset') {
         clear();
-        if (confirm('Reset to defaults from data.json?')) resetToDefaults();
+        if (confirm('Reset to defaults?')) resetToDefaults();
         return;
       }
       if (val.startsWith('/calc ')) {
@@ -349,6 +394,7 @@ function initCmd() {
         clear(); return;
       }
     }
+
     if (e.key === 'Escape') {
       cmd.value = ''; document.getElementById('cursor').style.visibility = 'visible';
       clearCmdOutput();
@@ -418,14 +464,17 @@ function renderCatList() {
     delBtn.textContent = 'del';
     delBtn.onclick = () => {
       if (!confirm(`Delete "${cat.name}"?`)) return;
-      const c = loadCategories(); c.splice(i, 1); saveCategories(c); renderCatList(); renderNav();
+      const c = loadCategories(); c.splice(i, 1);
+      saveCategories(c); renderCatList(); renderNav();
     };
 
-    row.appendChild(handle); row.appendChild(nameEl); row.appendChild(linksBtn); row.appendChild(delBtn);
+    row.appendChild(handle); row.appendChild(nameEl);
+    row.appendChild(linksBtn); row.appendChild(delBtn);
     container.appendChild(row);
 
     makeDraggable(row, i, 'cats', (from, to) => {
-      const c = loadCategories(); const [moved] = c.splice(from, 1); c.splice(to, 0, moved);
+      const c = loadCategories();
+      const [moved] = c.splice(from, 1); c.splice(to, 0, moved);
       saveCategories(c); renderCatList(); renderNav();
     });
   });
@@ -440,7 +489,8 @@ function startRenameCategory(i, nameEl, color) {
   const commit = () => {
     const val = input.value.trim();
     if (val) {
-      const c = loadCategories(); c[i].name = val; c[i].id = val.toLowerCase().replace(/\s+/g, '-');
+      const c = loadCategories(); c[i].name = val;
+      c[i].id = val.toLowerCase().replace(/\s+/g, '-');
       saveCategories(c); renderNav();
     }
     renderCatList();
@@ -455,9 +505,11 @@ function startRenameCategory(i, nameEl, color) {
 function addCategory() {
   const nameInput = document.getElementById('new-cat-name');
   const name = nameInput.value.trim(); if (!name) return;
-  const cats = loadCategories(); const color = COLORS[cats.length % COLORS.length];
+  const cats = loadCategories();
+  const color = COLORS[cats.length % COLORS.length];
   cats.push({ id: name.toLowerCase().replace(/\s+/g, '-'), name, color, links: [] });
-  saveCategories(cats); nameInput.value = ''; renderCatList(); renderNav();
+  saveCategories(cats); nameInput.value = '';
+  renderCatList(); renderNav();
 }
 
 function showLinkEditor(catIndex) {
@@ -494,18 +546,22 @@ function renderLinkList(catIndex) {
       saveCategories(c); renderNav();
     };
 
-    const delBtn = document.createElement('button'); delBtn.className = 'icon-btn danger'; delBtn.textContent = 'del';
+    const delBtn = document.createElement('button'); delBtn.className = 'icon-btn danger';
+    delBtn.textContent = 'del';
     delBtn.onclick = () => {
       const c = loadCategories(); c[catIndex].links.splice(li, 1);
       saveCategories(c); renderLinkList(catIndex); renderNav();
     };
 
-    row.appendChild(handle); row.appendChild(labelInput); row.appendChild(urlInput); row.appendChild(delBtn);
+    row.appendChild(handle); row.appendChild(labelInput);
+    row.appendChild(urlInput); row.appendChild(delBtn);
     container.appendChild(row);
 
     makeDraggable(row, li, 'links', (from, to) => {
-      const c = loadCategories(); const [moved] = c[catIndex].links.splice(from, 1);
-      c[catIndex].links.splice(to, 0, moved); saveCategories(c); renderLinkList(catIndex); renderNav();
+      const c = loadCategories();
+      const [moved] = c[catIndex].links.splice(from, 1);
+      c[catIndex].links.splice(to, 0, moved);
+      saveCategories(c); renderLinkList(catIndex); renderNav();
     });
   });
 }
@@ -514,7 +570,8 @@ function addLink() {
   const label = document.getElementById('new-link-label').value.trim();
   const url   = document.getElementById('new-link-url').value.trim();
   if (!label || !url) return;
-  const cats = loadCategories(); cats[editingCatIndex].links.push({ label, url });
+  const cats = loadCategories();
+  cats[editingCatIndex].links.push({ label, url });
   saveCategories(cats);
   document.getElementById('new-link-label').value = '';
   document.getElementById('new-link-url').value   = '';
@@ -522,9 +579,14 @@ function addLink() {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  await bootstrap();
-  applyBackground(); typeGreeting(); updateClock(); renderNav(); initCmd(); hideTimerUI();
+document.addEventListener('DOMContentLoaded', () => {
+  bootstrap();
+  applyBackground();
+  typeGreeting();
+  updateClock();
+  renderNav();
+  initCmd();
+  hideTimerUI();
 
   document.getElementById('settings-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('settings-overlay')) closeSettings();
@@ -537,9 +599,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('add-cat-btn').addEventListener('click', addCategory);
-  document.getElementById('new-cat-name').addEventListener('keydown', e => { if (e.key === 'Enter') addCategory(); });
+  document.getElementById('new-cat-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addCategory();
+  });
   document.getElementById('add-link-btn').addEventListener('click', addLink);
-  document.getElementById('new-link-url').addEventListener('keydown', e => { if (e.key === 'Enter') addLink(); });
+  document.getElementById('new-link-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addLink();
+  });
   document.getElementById('back-btn').addEventListener('click', showCatList);
   document.getElementById('us-save-btn').addEventListener('click', saveUserSettingsFromPanel);
   document.getElementById('us-cancel-btn').addEventListener('click', closeUserSettings);
