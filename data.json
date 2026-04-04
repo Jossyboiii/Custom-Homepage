@@ -1,7 +1,7 @@
 {
   "defaults": {
     "settings": {
-      "name": "Jay",
+      "name": "User",
       "backgroundUrl": ""
     },
     "categories": [
@@ -36,7 +36,7 @@
   },
   "saved": {
     "settings": {
-      "name": "Jay",
+      "name": "User",
       "backgroundUrl": ""
     },
     "categories": [
