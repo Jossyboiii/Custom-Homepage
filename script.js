@@ -22,51 +22,15 @@ const DEFAULT_CATEGORIES = [
 // then copy the "saved.categories" block back here to keep Git in sync.
 const SAVED_CATEGORIES = [
   {
-    id: 'entertainment', name: 'Entertainment', color: '#FFB401',
+    id: 'general', name: 'General', color: '#FFB401',
     links: [
-      { label: 'aniwatchtv',  url: 'https://aniwatchtv.to' },
-      { label: 'twitch',      url: 'https://www.twitch.tv/' },
-      { label: 'youtube',     url: 'https://www.youtube.com/' },
-      { label: 'kisscartoon', url: 'https://kisscartoon.sh/kisscartoon.html' },
-      { label: 'flixmomo',    url: 'https://flixmomo.org/' },
+      { label: 'youtube', url: 'https://www.youtube.com/' },
+      { label: 'twitch',  url: 'https://www.twitch.tv/' },
+      { label: 'gmail',   url: 'https://mail.google.com/mail/u/0/#inbox/' },
+      { label: 'canva',   url: 'https://www.canva.com/' },
+      { label: 'github',  url: 'https://github.com/Jossyboiii/' },
     ]
-  },
-  {
-    id: 'social', name: 'Social', color: '#F39A05',
-    links: [
-      { label: 'facebook',  url: 'https://www.facebook.com/?locale=fr_FR' },
-      { label: 'instagram', url: 'https://www.instagram.com/' },
-      { label: 'snapchat',  url: 'https://web.snapchat.com/' },
-      { label: 'twitter',   url: 'https://twitter.com/home/' },
-    ]
-  },
-  {
-    id: 'google', name: 'Google', color: '#D34B08',
-    links: [
-      { label: 'docs',   url: 'https://docs.google.com/document/u/0/' },
-      { label: 'drive',  url: 'https://drive.google.com/drive/my-drive' },
-      { label: 'gmail',  url: 'https://mail.google.com/mail/u/0/#inbox/' },
-      { label: 'photos', url: 'https://photos.google.com/' },
-    ]
-  },
-  {
-    id: 'utility', name: 'Utility', color: '#C2240B',
-    links: [
-      { label: 'ASCII',     url: 'https://patorjk.com/software/taag/#p=display&f=Alpha&t=Jossyboiii/' },
-      { label: 'bitwarden', url: 'https://vault.bitwarden.com/#/login' },
-      { label: 'canva',     url: 'https://www.canva.com/' },
-      { label: 'chatgpt',   url: 'https://chat.openai.com/' },
-      { label: 'claude',    url: 'https://claude.ai/' },
-      { label: 'github',    url: 'https://github.com/Jossyboiii/' },
-    ]
-  },
-  {
-    id: 'school', name: 'School', color: '#B70B0D',
-    links: [
-      { label: 'ucas', url: 'https://www.ucas.com/dashboard#/' },
-      { label: 'uob',  url: 'https://evsipr.brighton.ac.uk/urd/sits.urd/run/siw_portal.url?OZOEKEGIWI5XNOBH46arS2w4c_fLkJkoI0ADnGS0hyRK0CYTHgdehhDJggLFn3Af5xdx2QIysjYsl8nDhwnKz4Pq3WIUTy9HzjBEglCRqDcMUe6wg7mgprVRxrMTslfvevyXrS3AfbUihnGOxlgRVRoLKcvqc2PiKgUX70V6ZUAWHDlO0bsZnXKHykjkv2NVmgQTHvuBLcc0Z1_3IH4Tscb_NXm2EUfOEveBZ2KwNecUPu6r' },
-    ]
-  },
+  }
 ];
 
 const SAVED_SETTINGS = { name: 'User', backgroundUrl: '' };
