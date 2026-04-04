@@ -31,7 +31,7 @@ A minimal, terminal-style personal browser homepage built with vanilla HTML, CSS
 
 1. Clone or download the repo
 2. Install the [Custom New Tab URL](https://chrome.google.com/webstore/detail/custom-new-tab-url/mijlfebflfgnpbpkingmkgkigckkpbll) Chrome extension
-3. In the extension settings, set the URL to the path of `index.html` on your machine — e.g. `file:///C:/Users/yourname/Documents/GitHub/Custom-Homepage/index.html`
+3. In the extension settings, set the URL to the path of `index.html` on your machine — e.g. `file:///C:/Users/yourname/Documents/Custom-Homepage/index.html`
 5. Add a background video or image to `assets/` and name it `background.mp4` (or set a custom URL via `/settings`)
 5. Open a new tab — your homepage should load
 
