@@ -7,7 +7,8 @@ html {
   justify-content: center;
 }
 
-#bg-video {
+#bg-video,
+#bg-image {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -62,6 +63,21 @@ p span { color: #FFEE00; }
   width: 160px;
 }
 
+/* ── Command output ── */
+.cmd-output {
+  font-size: 13px;
+  color: #FFEE00;
+  margin-top: 6px;
+  padding: 2px 0;
+  letter-spacing: 0.03em;
+  min-height: 1em;
+  opacity: 0.85;
+}
+
+.cmd-output.error {
+  color: #e04444;
+}
+
 /* ── Nav ── */
 a {
   color: inherit;
@@ -91,7 +107,58 @@ nav ul li:last-child  { margin: 0 0 1em; }
   transition: opacity 0.3s ease-in-out;
 }
 
-/* ── Settings overlay ── */
+/* ── Timer section ── */
+#timer-section {
+  padding: 4px 0 10px;
+  border-top: 1px solid #1e1e1e;
+}
+
+#timer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+#timer-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.35;
+  color: #c5c8c6;
+}
+
+#timer-display {
+  font-size: 18px;
+  color: #FFEE00;
+  letter-spacing: 0.05em;
+}
+
+#timer-bar-track {
+  width: 100%;
+  height: 2px;
+  background: #1e1e1e;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+#timer-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #FFEE00;
+  border-radius: 1px;
+  transition: width 1s linear;
+}
+
+#timer-notif {
+  font-size: 12px;
+  color: #FFEE00;
+  letter-spacing: 0.08em;
+  margin-top: 8px;
+  animation: blink 0.6s step-start infinite;
+}
+
+/* ── Settings overlay (bookmarks) ── */
 #settings-overlay {
   display: none;
   position: fixed;
@@ -313,6 +380,54 @@ nav ul li:last-child  { margin: 0 0 1em; }
 #editing-cat-name {
   font-size: 13px;
   font-weight: bold;
+}
+
+/* ── User settings overlay ── */
+#user-settings-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+}
+
+#user-settings-overlay.open { display: flex; }
+
+#user-settings-panel {
+  background: #161616;
+  border: 1px solid #2e2e2e;
+  border-radius: 4px;
+  min-width: 380px;
+  max-width: 480px;
+  width: 90%;
+  font-size: 15px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  animation: panel-in 0.14s ease;
+}
+
+.us-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.us-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  color: #c5c8c6;
+}
+
+.us-hint {
+  font-size: 10px;
+  opacity: 0.4;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .hidden { display: none; }

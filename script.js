@@ -60,6 +60,48 @@ function saveCategories(cats) {
   localStorage.setItem('bookmarks', JSON.stringify(cats));
 }
 
+// ── User settings storage ──────────────────────────────────────────────────────
+function loadUserSettings() {
+  const stored = localStorage.getItem('userSettings');
+  return stored ? JSON.parse(stored) : { name: 'Jay', backgroundUrl: '' };
+}
+
+function saveUserSettings(settings) {
+  localStorage.setItem('userSettings', JSON.stringify(settings));
+}
+
+// ── Background (image or video) ────────────────────────────────────────────────
+function applyBackground() {
+  const { backgroundUrl } = loadUserSettings();
+  const video = document.getElementById('bg-video');
+  const img   = document.getElementById('bg-image');
+
+  if (!backgroundUrl) {
+    // restore defaults
+    video.style.display = '';
+    img.style.display   = 'none';
+    return;
+  }
+
+  const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(backgroundUrl);
+
+  if (isVideo) {
+    img.style.display = 'none';
+    video.style.display = '';
+    // Only reload if src actually changed
+    const source = video.querySelector('source');
+    if (source.src !== backgroundUrl) {
+      source.src = backgroundUrl;
+      video.load();
+      video.play().catch(() => {});
+    }
+  } else {
+    video.style.display = 'none';
+    img.style.display   = '';
+    img.src = backgroundUrl;
+  }
+}
+
 // ── Nav ────────────────────────────────────────────────────────────────────────
 function renderNav() {
   const cats = loadCategories();
@@ -101,11 +143,12 @@ function renderNav() {
 
 // ── Greeting + clock ───────────────────────────────────────────────────────────
 function getGreeting() {
+  const { name } = loadUserSettings();
   const hour = new Date().getHours();
-  if (hour >= 6  && hour < 12) return 'Good Morning, Jay >';
-  if (hour >= 12 && hour < 18) return 'Good Afternoon, Jay >';
-  if (hour >= 18 && hour < 24) return 'Good Evening, Jay >';
-  return 'Good Night, Jay >';
+  if (hour >= 6  && hour < 12) return `Good Morning, ${name} >`;
+  if (hour >= 12 && hour < 18) return `Good Afternoon, ${name} >`;
+  if (hour >= 18 && hour < 24) return `Good Evening, ${name} >`;
+  return `Good Night, ${name} >`;
 }
 
 function typeGreeting() {
@@ -136,6 +179,145 @@ function updateClock() {
   setTimeout(updateClock, 1000);
 }
 
+// ── Command output ─────────────────────────────────────────────────────────────
+let cmdOutputTimeout = null;
+
+function showCmdOutput(text, isError = false) {
+  const el = document.getElementById('cmd-output');
+  el.textContent = text;
+  el.className   = 'cmd-output' + (isError ? ' error' : '');
+  el.style.display = 'block';
+
+  clearTimeout(cmdOutputTimeout);
+  cmdOutputTimeout = setTimeout(() => {
+    el.style.display = 'none';
+    el.textContent   = '';
+  }, 4000);
+}
+
+function clearCmdOutput() {
+  clearTimeout(cmdOutputTimeout);
+  const el = document.getElementById('cmd-output');
+  el.style.display = 'none';
+  el.textContent   = '';
+}
+
+// ── /calc ──────────────────────────────────────────────────────────────────────
+function evalCalc(expr) {
+  // Sanitise: only allow digits, operators, parens, dots, spaces
+  const sanitised = expr.trim();
+  if (!/^[\d\s\+\-\*\/\%\^\(\)\.]+$/.test(sanitised)) {
+    return { ok: false, msg: 'err: invalid characters' };
+  }
+
+  // Replace ^ with ** for exponentiation
+  const jsExpr = sanitised.replace(/\^/g, '**');
+
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = Function('"use strict"; return (' + jsExpr + ')')();
+    if (typeof result !== 'number' || !isFinite(result)) {
+      return { ok: false, msg: 'err: not a finite number' };
+    }
+    // Round floating point noise
+    const rounded = parseFloat(result.toPrecision(12));
+    return { ok: true, msg: `= ${rounded}` };
+  } catch {
+    return { ok: false, msg: 'err: invalid expression' };
+  }
+}
+
+// ── /timer ─────────────────────────────────────────────────────────────────────
+let timerInterval   = null;
+let timerTotal      = 0;   // seconds
+let timerRemaining  = 0;   // seconds
+
+function startTimer(minutes) {
+  stopTimer();
+
+  timerTotal     = minutes * 60;
+  timerRemaining = timerTotal;
+
+  showTimerUI();
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateTimerDisplay();
+
+    if (timerRemaining <= 0) {
+      stopTimer();
+      timerDone();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  hideTimerUI();
+}
+
+function timerDone() {
+  const bar  = document.getElementById('timer-bar-fill');
+  const disp = document.getElementById('timer-display');
+  if (bar)  bar.style.width = '100%';
+  if (disp) disp.textContent = '00:00';
+
+  // Flash notification
+  const notif = document.getElementById('timer-notif');
+  if (notif) {
+    notif.style.display = 'block';
+    setTimeout(() => { notif.style.display = 'none'; }, 5000);
+  }
+}
+
+function showTimerUI() {
+  document.getElementById('timer-section').style.display = 'block';
+}
+
+function hideTimerUI() {
+  document.getElementById('timer-section').style.display = 'none';
+  const notif = document.getElementById('timer-notif');
+  if (notif) notif.style.display = 'none';
+}
+
+function updateTimerDisplay() {
+  const mm   = Math.floor(timerRemaining / 60).toString().padStart(2, '0');
+  const ss   = (timerRemaining % 60).toString().padStart(2, '0');
+  const disp = document.getElementById('timer-display');
+  const bar  = document.getElementById('timer-bar-fill');
+
+  if (disp) disp.textContent = `${mm}:${ss}`;
+  if (bar) {
+    const pct = timerTotal > 0 ? ((timerTotal - timerRemaining) / timerTotal) * 100 : 0;
+    bar.style.width = `${pct}%`;
+  }
+}
+
+// ── /settings panel ────────────────────────────────────────────────────────────
+function openUserSettings() {
+  const { name, backgroundUrl } = loadUserSettings();
+  document.getElementById('us-name').value = name;
+  document.getElementById('us-bg').value   = backgroundUrl;
+  document.getElementById('user-settings-overlay').classList.add('open');
+}
+
+function closeUserSettings() {
+  document.getElementById('user-settings-overlay').classList.remove('open');
+}
+
+function saveUserSettingsFromPanel() {
+  const name          = document.getElementById('us-name').value.trim() || 'Jay';
+  const backgroundUrl = document.getElementById('us-bg').value.trim();
+  saveUserSettings({ name, backgroundUrl });
+  applyBackground();
+  typeGreeting(); // Re-run greeting with new name
+  closeUserSettings();
+}
+
 // ── Command input ──────────────────────────────────────────────────────────────
 function initCmd() {
   const cursor = document.getElementById('cursor');
@@ -148,20 +330,67 @@ function initCmd() {
   cmd.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = cmd.value.trim();
+
+      // /bookmarks
       if (val === '/bookmarks') {
         cmd.value = '';
         cursor.style.visibility = 'visible';
         openSettings();
+        return;
+      }
+
+      // /settings
+      if (val === '/settings') {
+        cmd.value = '';
+        cursor.style.visibility = 'visible';
+        openUserSettings();
+        return;
+      }
+
+      // /calc <expr>
+      if (val.startsWith('/calc ')) {
+        const expr   = val.slice(6);
+        const result = evalCalc(expr);
+        showCmdOutput(result.msg, !result.ok);
+        cmd.value = '';
+        cursor.style.visibility = 'visible';
+        return;
+      }
+
+      // /timer stop
+      if (val === '/timer stop') {
+        stopTimer();
+        showCmdOutput('timer stopped');
+        cmd.value = '';
+        cursor.style.visibility = 'visible';
+        return;
+      }
+
+      // /timer <minutes>
+      if (val.startsWith('/timer ')) {
+        const arg = val.slice(7).trim();
+        const mins = parseFloat(arg);
+        if (!isNaN(mins) && mins > 0 && mins <= 1440) {
+          startTimer(mins);
+          showCmdOutput(`timer started: ${mins}m`);
+        } else {
+          showCmdOutput('err: usage /timer <minutes>', true);
+        }
+        cmd.value = '';
+        cursor.style.visibility = 'visible';
+        return;
       }
     }
+
     if (e.key === 'Escape') {
       cmd.value = '';
       cursor.style.visibility = 'visible';
+      clearCmdOutput();
     }
   });
 }
 
-// ── Settings ───────────────────────────────────────────────────────────────────
+// ── Settings (bookmarks) ───────────────────────────────────────────────────────
 let editingCatIndex = null;
 
 function openSettings() {
@@ -182,7 +411,7 @@ function showCatList() {
 
 // ── Drag-and-drop ──────────────────────────────────────────────────────────────
 let dragSrcIndex = null;
-let dragContext  = null; // 'cats' or 'links'
+let dragContext  = null;
 
 function makeDraggable(row, index, context, onReorder) {
   row.setAttribute('draggable', true);
@@ -193,7 +422,6 @@ function makeDraggable(row, index, context, onReorder) {
     dragContext  = context;
     row.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    // ghost image offset so it doesn't snap to corner
     e.dataTransfer.setDragImage(row, 16, row.offsetHeight / 2);
   });
 
@@ -426,17 +654,28 @@ function addLink() {
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  applyBackground();
   typeGreeting();
   updateClock();
   renderNav();
   initCmd();
+  hideTimerUI();
 
+  // Bookmarks overlay close
   document.getElementById('settings-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('settings-overlay')) closeSettings();
   });
 
+  // User settings overlay close
+  document.getElementById('user-settings-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('user-settings-overlay')) closeUserSettings();
+  });
+
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeSettings();
+    if (e.key === 'Escape') {
+      closeSettings();
+      closeUserSettings();
+    }
   });
 
   document.getElementById('add-cat-btn').addEventListener('click', addCategory);
@@ -450,4 +689,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('back-btn').addEventListener('click', showCatList);
+
+  // User settings panel save/cancel
+  document.getElementById('us-save-btn').addEventListener('click', saveUserSettingsFromPanel);
+  document.getElementById('us-cancel-btn').addEventListener('click', closeUserSettings);
 });

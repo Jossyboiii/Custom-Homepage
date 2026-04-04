@@ -23,6 +23,7 @@
   <video id="bg-video" autoplay muted loop playsinline>
     <source src="assets/background.mp4" type="video/mp4">
   </video>
+  <img id="bg-image" alt="" style="display:none;">
 
   <div id="header">
     <p>
@@ -32,7 +33,22 @@
     <div id="clock"></div>
   </div>
 
+  <!-- Command output line -->
+  <div id="cmd-output" class="cmd-output" style="display:none;"></div>
+
   <nav id="nav"></nav>
+
+  <!-- Timer section -->
+  <div id="timer-section" style="display:none;">
+    <div id="timer-row">
+      <span id="timer-label">timer</span>
+      <span id="timer-display">00:00</span>
+    </div>
+    <div id="timer-bar-track">
+      <div id="timer-bar-fill"></div>
+    </div>
+    <div id="timer-notif" style="display:none;">// timer complete</div>
+  </div>
 
   <!-- Bookmarks manager overlay -->
   <div id="settings-overlay">
@@ -70,6 +86,37 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- User settings overlay -->
+  <div id="user-settings-overlay">
+    <div id="user-settings-panel">
+
+      <div id="settings-header">
+        <span>// settings</span>
+        <span id="settings-hint">esc to close</span>
+      </div>
+
+      <div id="settings-body">
+        <div class="section-label">preferences</div>
+
+        <div class="us-field">
+          <label class="us-label">name</label>
+          <input type="text" id="us-name" class="inline-input" placeholder="Jay">
+        </div>
+
+        <div class="us-field">
+          <label class="us-label">background url <span class="us-hint">(image or .mp4)</span></label>
+          <input type="text" id="us-bg" class="inline-input" placeholder="https://...">
+        </div>
+
+        <div class="input-row" style="margin-top:18px;">
+          <button class="action-btn" id="us-save-btn">save</button>
+          <button class="icon-btn" id="us-cancel-btn">cancel</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
