@@ -44,5 +44,3 @@ To back up or sync your config across machines:
 - `/export` — downloads your current state as `data.json`
 - `/import` — loads a `data.json` and applies it immediately
 - `/reset` — reverts to the default 5-link layout baked into `script.js`
-
-To permanently change what new installs get, edit `SAVED_CATEGORIES` and `SAVED_SETTINGS` in `script.js` and push to GitHub.
