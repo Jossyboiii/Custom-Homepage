@@ -35,8 +35,6 @@ A minimal, terminal-style personal browser homepage built with vanilla HTML, CSS
 5. Add a background video or image to `assets/` and name it `background.mp4` (or set a custom URL via `/settings`)
 5. Open a new tab — your homepage should load
 
-> **Note:** Do not open `index.html` directly via the file path in the browser — localStorage is blocked on `file://` pages. The page must be loaded through the extension (i.e. by opening a new tab).
-
 ## Config & Storage
 
 All bookmarks and settings are stored in `localStorage` under the extension's origin. On first load, the built-in defaults from `script.js` are seeded automatically — no setup required.
