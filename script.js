@@ -2,7 +2,7 @@
 // No fetch('./data.json') — file:// blocks it. Everything lives here.
 // To update defaults for new installs, edit these constants and push to GitHub.
 
-const DEFAULT_SETTINGS = { name: 'Jay', backgroundUrl: '' };
+const DEFAULT_SETTINGS = { name: 'User', backgroundUrl: '' };
 
 const DEFAULT_CATEGORIES = [
   {
@@ -69,7 +69,7 @@ const SAVED_CATEGORIES = [
   },
 ];
 
-const SAVED_SETTINGS = { name: 'Jay', backgroundUrl: '' };
+const SAVED_SETTINGS = { name: 'User', backgroundUrl: '' };
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────────
 function bootstrap() {
