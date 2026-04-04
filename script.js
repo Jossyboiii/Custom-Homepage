@@ -1,66 +1,49 @@
-// ── Default bookmarks ──────────────────────────────────────────────────────────
-const DEFAULTS = [
-  {
-    id: 'entertainment', name: 'Entertainment', color: '#FFB401',
-    links: [
-      { label: 'aniwatchtv',  url: 'https://aniwatchtv.to' },
-      { label: 'twitch',      url: 'https://www.twitch.tv/' },
-      { label: 'youtube',     url: 'https://www.youtube.com/' },
-      { label: 'kisscartoon', url: 'https://kisscartoon.sh/kisscartoon.html' },
-      { label: 'flixmomo',    url: 'https://flixmomo.org/' },
-    ]
-  },
-  {
-    id: 'social', name: 'Social', color: '#F39A05',
-    links: [
-      { label: 'facebook',  url: 'https://www.facebook.com/?locale=fr_FR' },
-      { label: 'instagram', url: 'https://www.instagram.com/' },
-      { label: 'snapchat',  url: 'https://web.snapchat.com/' },
-      { label: 'twitter',   url: 'https://twitter.com/home/' },
-    ]
-  },
-  {
-    id: 'google', name: 'Google', color: '#D34B08',
-    links: [
-      { label: 'docs',   url: 'https://docs.google.com/document/u/0/' },
-      { label: 'drive',  url: 'https://drive.google.com/drive/my-drive' },
-      { label: 'gmail',  url: 'https://mail.google.com/mail/u/0/#inbox/' },
-      { label: 'photos', url: 'https://photos.google.com/' },
-    ]
-  },
-  {
-    id: 'utility', name: 'Utility', color: '#C2240B',
-    links: [
-      { label: 'ASCII',     url: 'https://patorjk.com/software/taag/#p=display&f=Alpha&t=Jossyboiii/' },
-      { label: 'bitwarden', url: 'https://vault.bitwarden.com/#/login' },
-      { label: 'canva',     url: 'https://www.canva.com/' },
-      { label: 'chatgpt',   url: 'https://chat.openai.com/' },
-      { label: 'claude',    url: 'https://claude.ai/' },
-      { label: 'github',    url: 'https://github.com/Jossyboiii/' },
-    ]
-  },
-  {
-    id: 'school', name: 'School', color: '#B70B0D',
-    links: [
-      { label: 'ucas', url: 'https://www.ucas.com/dashboard#/' },
-      { label: 'uob',  url: 'https://evsipr.brighton.ac.uk/urd/sits.urd/run/siw_portal.url?OZOEKEGIWI5XNOBH46arS2w4c_fLkJkoI0ADnGS0hyRK0CYTHgdehhDJggLFn3Af5xdx2QIysjYsl8nDhwnKz4Pq3WIUTy9HzjBEglCRqDcMUe6wg7mgprVRxrMTslfvevyXrS3AfbUihnGOxlgRVRoLKcvqc2PiKgUX70V6ZUAWHDlO0bsZnXKHykjkv2NVmgQTHvuBLcc0Z1_3IH4Tscb_NXm2EUfOEveBZ2KwNecUPu6r' },
-    ]
-  },
-];
+// ── Data source ────────────────────────────────────────────────────────────────
+// data.json is the source of truth.
+// On first load, "saved" block is seeded into localStorage.
+// All subsequent changes write to localStorage only.
+// /export downloads current state as data.json.
+// /import reads a data.json and writes it to localStorage.
+// /reset clears localStorage and reverts to data.json defaults.
 
-const COLORS = ['#FFB401','#F39A05','#D34B08','#C2240B','#B70B0D','#8B0000','#5C4033'];
+let _jsonData = null;
+
+async function fetchJsonData() {
+  if (_jsonData) return _jsonData;
+  try {
+    const res = await fetch('./data.json');
+    _jsonData = await res.json();
+    return _jsonData;
+  } catch {
+    return null;
+  }
+}
+
+// ── Bootstrap ──────────────────────────────────────────────────────────────────
+async function bootstrap() {
+  const json = await fetchJsonData();
+  if (!json) return;
+
+  if (!localStorage.getItem('bookmarks')) {
+    const src = json.saved || json.defaults;
+    localStorage.setItem('bookmarks', JSON.stringify(src.categories));
+  }
+  if (!localStorage.getItem('userSettings')) {
+    const src = json.saved || json.defaults;
+    localStorage.setItem('userSettings', JSON.stringify(src.settings));
+  }
+}
 
 // ── Storage ────────────────────────────────────────────────────────────────────
 function loadCategories() {
   const stored = localStorage.getItem('bookmarks');
-  return stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(DEFAULTS));
+  return stored ? JSON.parse(stored) : [];
 }
 
 function saveCategories(cats) {
   localStorage.setItem('bookmarks', JSON.stringify(cats));
 }
 
-// ── User settings storage ──────────────────────────────────────────────────────
 function loadUserSettings() {
   const stored = localStorage.getItem('userSettings');
   return stored ? JSON.parse(stored) : { name: 'Jay', backgroundUrl: '' };
@@ -70,35 +53,81 @@ function saveUserSettings(settings) {
   localStorage.setItem('userSettings', JSON.stringify(settings));
 }
 
-// ── Background (image or video) ────────────────────────────────────────────────
+// ── Export ─────────────────────────────────────────────────────────────────────
+async function exportConfig() {
+  const json = await fetchJsonData();
+  const payload = {
+    defaults: json ? json.defaults : null,
+    saved: {
+      settings:   loadUserSettings(),
+      categories: loadCategories()
+    }
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'data.json'; a.click();
+  URL.revokeObjectURL(url);
+  showCmdOutput('exported data.json');
+}
+
+// ── Import ─────────────────────────────────────────────────────────────────────
+function importConfig() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const json = JSON.parse(ev.target.result);
+        const src  = json.saved || json.defaults;
+        if (!src || !src.categories) throw new Error('invalid');
+        localStorage.setItem('bookmarks',    JSON.stringify(src.categories));
+        localStorage.setItem('userSettings', JSON.stringify(src.settings || { name: 'Jay', backgroundUrl: '' }));
+        _jsonData = json;
+        applyBackground(); typeGreeting(); renderNav();
+        showCmdOutput('config imported');
+      } catch {
+        showCmdOutput('err: invalid data.json', true);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+async function resetToDefaults() {
+  const json = await fetchJsonData();
+  if (!json) { showCmdOutput('err: could not load data.json', true); return; }
+  const src = json.defaults;
+  localStorage.setItem('bookmarks',    JSON.stringify(src.categories));
+  localStorage.setItem('userSettings', JSON.stringify(src.settings));
+  applyBackground(); typeGreeting(); renderNav();
+  showCmdOutput('reset to defaults');
+}
+
+// ── Background ─────────────────────────────────────────────────────────────────
 function applyBackground() {
   const { backgroundUrl } = loadUserSettings();
   const video = document.getElementById('bg-video');
   const img   = document.getElementById('bg-image');
 
   if (!backgroundUrl) {
-    // restore defaults
-    video.style.display = '';
-    img.style.display   = 'none';
-    return;
+    video.style.display = ''; img.style.display = 'none'; return;
   }
 
   const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(backgroundUrl);
-
   if (isVideo) {
-    img.style.display = 'none';
-    video.style.display = '';
-    // Only reload if src actually changed
+    img.style.display = 'none'; video.style.display = '';
     const source = video.querySelector('source');
     if (source.src !== backgroundUrl) {
-      source.src = backgroundUrl;
-      video.load();
-      video.play().catch(() => {});
+      source.src = backgroundUrl; video.load(); video.play().catch(() => {});
     }
   } else {
-    video.style.display = 'none';
-    img.style.display   = '';
-    img.src = backgroundUrl;
+    video.style.display = 'none'; img.style.display = ''; img.src = backgroundUrl;
   }
 }
 
@@ -122,10 +151,8 @@ function renderNav() {
       const li = document.createElement('li');
       li.className = 'nav-item';
       const a = document.createElement('a');
-      a.href = link.url;
-      a.textContent = link.label;
-      li.appendChild(a);
-      ul.appendChild(li);
+      a.href = link.url; a.textContent = link.label;
+      li.appendChild(a); ul.appendChild(li);
       li.addEventListener('mouseenter', () => { a.style.color = cat.color; });
       li.addEventListener('mouseleave', () => { a.style.color = ''; });
     });
@@ -156,13 +183,9 @@ function typeGreeting() {
   const cursor = document.getElementById('cursor');
   const text   = getGreeting();
   let i = 0;
-
-  el.textContent = '';
-  cursor.style.animation = 'none';
-
+  el.textContent = ''; cursor.style.animation = 'none';
   const interval = setInterval(() => {
-    el.textContent += text[i];
-    i++;
+    el.textContent += text[i]; i++;
     if (i >= text.length) {
       clearInterval(interval);
       cursor.style.animation = 'blink 1s step-start infinite';
@@ -187,76 +210,54 @@ function showCmdOutput(text, isError = false) {
   el.textContent = text;
   el.className   = 'cmd-output' + (isError ? ' error' : '');
   el.style.display = 'block';
-
   clearTimeout(cmdOutputTimeout);
   cmdOutputTimeout = setTimeout(() => {
-    el.style.display = 'none';
-    el.textContent   = '';
+    el.style.display = 'none'; el.textContent = '';
   }, 4000);
 }
 
 function clearCmdOutput() {
   clearTimeout(cmdOutputTimeout);
   const el = document.getElementById('cmd-output');
-  el.style.display = 'none';
-  el.textContent   = '';
+  el.style.display = 'none'; el.textContent = '';
 }
 
 // ── /calc ──────────────────────────────────────────────────────────────────────
 function evalCalc(expr) {
-  // Sanitise: only allow digits, operators, parens, dots, spaces
   const sanitised = expr.trim();
   if (!/^[\d\s\+\-\*\/\%\^\(\)\.]+$/.test(sanitised)) {
     return { ok: false, msg: 'err: invalid characters' };
   }
-
-  // Replace ^ with ** for exponentiation
   const jsExpr = sanitised.replace(/\^/g, '**');
-
   try {
     // eslint-disable-next-line no-new-func
     const result = Function('"use strict"; return (' + jsExpr + ')')();
     if (typeof result !== 'number' || !isFinite(result)) {
       return { ok: false, msg: 'err: not a finite number' };
     }
-    // Round floating point noise
-    const rounded = parseFloat(result.toPrecision(12));
-    return { ok: true, msg: `= ${rounded}` };
+    return { ok: true, msg: `= ${parseFloat(result.toPrecision(12))}` };
   } catch {
     return { ok: false, msg: 'err: invalid expression' };
   }
 }
 
 // ── /timer ─────────────────────────────────────────────────────────────────────
-let timerInterval   = null;
-let timerTotal      = 0;   // seconds
-let timerRemaining  = 0;   // seconds
+let timerInterval  = null;
+let timerTotal     = 0;
+let timerRemaining = 0;
 
 function startTimer(minutes) {
   stopTimer();
-
-  timerTotal     = minutes * 60;
-  timerRemaining = timerTotal;
-
-  showTimerUI();
-  updateTimerDisplay();
-
+  timerTotal = minutes * 60; timerRemaining = timerTotal;
+  showTimerUI(); updateTimerDisplay();
   timerInterval = setInterval(() => {
-    timerRemaining--;
-    updateTimerDisplay();
-
-    if (timerRemaining <= 0) {
-      stopTimer();
-      timerDone();
-    }
+    timerRemaining--; updateTimerDisplay();
+    if (timerRemaining <= 0) { stopTimer(); timerDone(); }
   }, 1000);
 }
 
 function stopTimer() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   hideTimerUI();
 }
 
@@ -265,19 +266,11 @@ function timerDone() {
   const disp = document.getElementById('timer-display');
   if (bar)  bar.style.width = '100%';
   if (disp) disp.textContent = '00:00';
-
-  // Flash notification
   const notif = document.getElementById('timer-notif');
-  if (notif) {
-    notif.style.display = 'block';
-    setTimeout(() => { notif.style.display = 'none'; }, 5000);
-  }
+  if (notif) { notif.style.display = 'block'; setTimeout(() => { notif.style.display = 'none'; }, 5000); }
 }
 
-function showTimerUI() {
-  document.getElementById('timer-section').style.display = 'block';
-}
-
+function showTimerUI() { document.getElementById('timer-section').style.display = 'block'; }
 function hideTimerUI() {
   document.getElementById('timer-section').style.display = 'none';
   const notif = document.getElementById('timer-notif');
@@ -285,11 +278,10 @@ function hideTimerUI() {
 }
 
 function updateTimerDisplay() {
-  const mm   = Math.floor(timerRemaining / 60).toString().padStart(2, '0');
-  const ss   = (timerRemaining % 60).toString().padStart(2, '0');
+  const mm = Math.floor(timerRemaining / 60).toString().padStart(2, '0');
+  const ss = (timerRemaining % 60).toString().padStart(2, '0');
   const disp = document.getElementById('timer-display');
   const bar  = document.getElementById('timer-bar-fill');
-
   if (disp) disp.textContent = `${mm}:${ss}`;
   if (bar) {
     const pct = timerTotal > 0 ? ((timerTotal - timerRemaining) / timerTotal) * 100 : 0;
@@ -313,9 +305,7 @@ function saveUserSettingsFromPanel() {
   const name          = document.getElementById('us-name').value.trim() || 'Jay';
   const backgroundUrl = document.getElementById('us-bg').value.trim();
   saveUserSettings({ name, backgroundUrl });
-  applyBackground();
-  typeGreeting(); // Re-run greeting with new name
-  closeUserSettings();
+  applyBackground(); typeGreeting(); closeUserSettings();
 }
 
 // ── Command input ──────────────────────────────────────────────────────────────
@@ -330,77 +320,50 @@ function initCmd() {
   cmd.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = cmd.value.trim();
+      const clear = () => { cmd.value = ''; cursor.style.visibility = 'visible'; };
 
-      // /bookmarks
-      if (val === '/bookmarks') {
-        cmd.value = '';
-        cursor.style.visibility = 'visible';
-        openSettings();
+      if (val === '/bookmarks') { clear(); openSettings(); return; }
+      if (val === '/settings')  { clear(); openUserSettings(); return; }
+      if (val === '/export')    { clear(); exportConfig(); return; }
+      if (val === '/import')    { clear(); importConfig(); return; }
+      if (val === '/reset')     {
+        clear();
+        if (confirm('Reset to defaults from data.json?')) resetToDefaults();
         return;
       }
-
-      // /settings
-      if (val === '/settings') {
-        cmd.value = '';
-        cursor.style.visibility = 'visible';
-        openUserSettings();
-        return;
-      }
-
-      // /calc <expr>
       if (val.startsWith('/calc ')) {
-        const expr   = val.slice(6);
-        const result = evalCalc(expr);
+        const result = evalCalc(val.slice(6));
         showCmdOutput(result.msg, !result.ok);
-        cmd.value = '';
-        cursor.style.visibility = 'visible';
-        return;
+        clear(); return;
       }
-
-      // /timer stop
       if (val === '/timer stop') {
-        stopTimer();
-        showCmdOutput('timer stopped');
-        cmd.value = '';
-        cursor.style.visibility = 'visible';
-        return;
+        stopTimer(); showCmdOutput('timer stopped'); clear(); return;
       }
-
-      // /timer <minutes>
       if (val.startsWith('/timer ')) {
-        const arg = val.slice(7).trim();
-        const mins = parseFloat(arg);
+        const mins = parseFloat(val.slice(7).trim());
         if (!isNaN(mins) && mins > 0 && mins <= 1440) {
-          startTimer(mins);
-          showCmdOutput(`timer started: ${mins}m`);
+          startTimer(mins); showCmdOutput(`timer started: ${mins}m`);
         } else {
           showCmdOutput('err: usage /timer <minutes>', true);
         }
-        cmd.value = '';
-        cursor.style.visibility = 'visible';
-        return;
+        clear(); return;
       }
     }
-
     if (e.key === 'Escape') {
-      cmd.value = '';
-      cursor.style.visibility = 'visible';
+      cmd.value = ''; document.getElementById('cursor').style.visibility = 'visible';
       clearCmdOutput();
     }
   });
 }
 
-// ── Settings (bookmarks) ───────────────────────────────────────────────────────
+// ── Bookmarks manager ──────────────────────────────────────────────────────────
+const COLORS = ['#FFB401','#F39A05','#D34B08','#C2240B','#B70B0D','#8B0000','#5C4033'];
 let editingCatIndex = null;
+let dragSrcIndex    = null;
+let dragContext     = null;
 
-function openSettings() {
-  document.getElementById('settings-overlay').classList.add('open');
-  showCatList();
-}
-
-function closeSettings() {
-  document.getElementById('settings-overlay').classList.remove('open');
-}
+function openSettings()  { document.getElementById('settings-overlay').classList.add('open'); showCatList(); }
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
 
 function showCatList() {
   editingCatIndex = null;
@@ -409,29 +372,17 @@ function showCatList() {
   renderCatList();
 }
 
-// ── Drag-and-drop ──────────────────────────────────────────────────────────────
-let dragSrcIndex = null;
-let dragContext  = null;
-
 function makeDraggable(row, index, context, onReorder) {
   row.setAttribute('draggable', true);
-  row.dataset.index = index;
-
   row.addEventListener('dragstart', e => {
-    dragSrcIndex = index;
-    dragContext  = context;
-    row.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
+    dragSrcIndex = index; dragContext = context;
+    row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setDragImage(row, 16, row.offsetHeight / 2);
   });
-
   row.addEventListener('dragend', () => {
-    dragSrcIndex = null;
-    dragContext  = null;
-    row.classList.remove('dragging');
+    dragSrcIndex = null; dragContext = null; row.classList.remove('dragging');
     document.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
   });
-
   row.addEventListener('dragover', e => {
     e.preventDefault();
     if (dragContext === context && dragSrcIndex !== index) {
@@ -439,100 +390,61 @@ function makeDraggable(row, index, context, onReorder) {
       row.classList.add('drag-over');
     }
   });
-
-  row.addEventListener('dragleave', () => {
-    row.classList.remove('drag-over');
-  });
-
+  row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
   row.addEventListener('drop', e => {
-    e.preventDefault();
-    row.classList.remove('drag-over');
+    e.preventDefault(); row.classList.remove('drag-over');
     if (dragContext === context && dragSrcIndex !== null && dragSrcIndex !== index) {
       onReorder(dragSrcIndex, index);
     }
   });
 }
 
-// ── Category list ──────────────────────────────────────────────────────────────
 function renderCatList() {
   const cats      = loadCategories();
   const container = document.getElementById('cat-list');
   container.innerHTML = '';
 
   cats.forEach((cat, i) => {
-    const row = document.createElement('div');
-    row.className = 'settings-row';
-
-    const handle = document.createElement('span');
-    handle.className  = 'drag-handle';
-    handle.textContent = '⠿';
-    handle.title = 'Drag to reorder';
-
-    const nameEl = document.createElement('span');
-    nameEl.className   = 'cat-name';
-    nameEl.textContent = cat.name;
-    nameEl.style.color = cat.color;
-    nameEl.title       = 'Click to rename';
+    const row    = document.createElement('div'); row.className = 'settings-row';
+    const handle = document.createElement('span'); handle.className = 'drag-handle'; handle.textContent = '⠿';
+    const nameEl = document.createElement('span'); nameEl.className = 'cat-name';
+    nameEl.textContent = cat.name; nameEl.style.color = cat.color; nameEl.title = 'Click to rename';
     nameEl.addEventListener('click', () => startRenameCategory(i, nameEl, cat.color));
 
-    const linksBtn = document.createElement('button');
-    linksBtn.className   = 'icon-btn';
-    linksBtn.textContent = 'links';
-    linksBtn.title       = 'Edit links';
-    linksBtn.onclick     = () => showLinkEditor(i);
+    const linksBtn = document.createElement('button'); linksBtn.className = 'icon-btn';
+    linksBtn.textContent = 'links'; linksBtn.onclick = () => showLinkEditor(i);
 
-    const delBtn = document.createElement('button');
-    delBtn.className   = 'icon-btn danger';
+    const delBtn = document.createElement('button'); delBtn.className = 'icon-btn danger';
     delBtn.textContent = 'del';
-    delBtn.title       = 'Delete folder';
-    delBtn.onclick     = () => {
+    delBtn.onclick = () => {
       if (!confirm(`Delete "${cat.name}"?`)) return;
-      const c = loadCategories();
-      c.splice(i, 1);
-      saveCategories(c);
-      renderCatList();
-      renderNav();
+      const c = loadCategories(); c.splice(i, 1); saveCategories(c); renderCatList(); renderNav();
     };
 
-    row.appendChild(handle);
-    row.appendChild(nameEl);
-    row.appendChild(linksBtn);
-    row.appendChild(delBtn);
+    row.appendChild(handle); row.appendChild(nameEl); row.appendChild(linksBtn); row.appendChild(delBtn);
     container.appendChild(row);
 
     makeDraggable(row, i, 'cats', (from, to) => {
-      const c = loadCategories();
-      const [moved] = c.splice(from, 1);
-      c.splice(to, 0, moved);
-      saveCategories(c);
-      renderCatList();
-      renderNav();
+      const c = loadCategories(); const [moved] = c.splice(from, 1); c.splice(to, 0, moved);
+      saveCategories(c); renderCatList(); renderNav();
     });
   });
 }
 
 function startRenameCategory(i, nameEl, color) {
   const input = document.createElement('input');
-  input.type      = 'text';
-  input.value     = nameEl.textContent;
-  input.className = 'inline-input rename-input';
-  input.style.color = color;
-  nameEl.replaceWith(input);
-  input.focus();
-  input.select();
+  input.type = 'text'; input.value = nameEl.textContent;
+  input.className = 'inline-input rename-input'; input.style.color = color;
+  nameEl.replaceWith(input); input.focus(); input.select();
 
   const commit = () => {
     const val = input.value.trim();
     if (val) {
-      const c = loadCategories();
-      c[i].name = val;
-      c[i].id   = val.toLowerCase().replace(/\s+/g, '-');
-      saveCategories(c);
-      renderNav();
+      const c = loadCategories(); c[i].name = val; c[i].id = val.toLowerCase().replace(/\s+/g, '-');
+      saveCategories(c); renderNav();
     }
     renderCatList();
   };
-
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
@@ -542,96 +454,58 @@ function startRenameCategory(i, nameEl, color) {
 
 function addCategory() {
   const nameInput = document.getElementById('new-cat-name');
-  const name = nameInput.value.trim();
-  if (!name) return;
-
-  const cats  = loadCategories();
-  const color = COLORS[cats.length % COLORS.length];
+  const name = nameInput.value.trim(); if (!name) return;
+  const cats = loadCategories(); const color = COLORS[cats.length % COLORS.length];
   cats.push({ id: name.toLowerCase().replace(/\s+/g, '-'), name, color, links: [] });
-  saveCategories(cats);
-  nameInput.value = '';
-  renderCatList();
-  renderNav();
+  saveCategories(cats); nameInput.value = ''; renderCatList(); renderNav();
 }
 
-// ── Link editor ────────────────────────────────────────────────────────────────
 function showLinkEditor(catIndex) {
   editingCatIndex = catIndex;
   const cats = loadCategories();
-
   document.getElementById('cat-list-section').classList.add('hidden');
   document.getElementById('link-editor').classList.remove('hidden');
-
   const nameEl = document.getElementById('editing-cat-name');
-  nameEl.textContent = cats[catIndex].name;
-  nameEl.style.color = cats[catIndex].color;
-
+  nameEl.textContent = cats[catIndex].name; nameEl.style.color = cats[catIndex].color;
   renderLinkList(catIndex);
 }
 
 function renderLinkList(catIndex) {
-  const cats      = loadCategories();
-  const cat       = cats[catIndex];
-  const container = document.getElementById('link-list');
-  container.innerHTML = '';
+  const cats = loadCategories(); const cat = cats[catIndex];
+  const container = document.getElementById('link-list'); container.innerHTML = '';
 
   cat.links.forEach((link, li) => {
-    const row = document.createElement('div');
-    row.className = 'settings-row';
-
-    const handle = document.createElement('span');
-    handle.className   = 'drag-handle';
-    handle.textContent = '⠿';
-    handle.title       = 'Drag to reorder';
+    const row    = document.createElement('div'); row.className = 'settings-row';
+    const handle = document.createElement('span'); handle.className = 'drag-handle'; handle.textContent = '⠿';
 
     const labelInput = document.createElement('input');
-    labelInput.type        = 'text';
-    labelInput.value       = link.label;
-    labelInput.className   = 'inline-input';
-    labelInput.placeholder = 'label';
-    labelInput.onchange    = () => {
-      const c = loadCategories();
-      c[catIndex].links[li].label = labelInput.value;
-      saveCategories(c);
-      renderNav();
+    labelInput.type = 'text'; labelInput.value = link.label;
+    labelInput.className = 'inline-input'; labelInput.placeholder = 'label';
+    labelInput.onchange = () => {
+      const c = loadCategories(); c[catIndex].links[li].label = labelInput.value;
+      saveCategories(c); renderNav();
     };
 
     const urlInput = document.createElement('input');
-    urlInput.type        = 'text';
-    urlInput.value       = link.url;
-    urlInput.className   = 'inline-input url-input';
-    urlInput.placeholder = 'https://...';
-    urlInput.onchange    = () => {
-      const c = loadCategories();
-      c[catIndex].links[li].url = urlInput.value;
-      saveCategories(c);
-      renderNav();
+    urlInput.type = 'text'; urlInput.value = link.url;
+    urlInput.className = 'inline-input url-input'; urlInput.placeholder = 'https://...';
+    urlInput.onchange = () => {
+      const c = loadCategories(); c[catIndex].links[li].url = urlInput.value;
+      saveCategories(c); renderNav();
     };
 
-    const delBtn = document.createElement('button');
-    delBtn.className   = 'icon-btn danger';
-    delBtn.textContent = 'del';
-    delBtn.onclick     = () => {
-      const c = loadCategories();
-      c[catIndex].links.splice(li, 1);
-      saveCategories(c);
-      renderLinkList(catIndex);
-      renderNav();
+    const delBtn = document.createElement('button'); delBtn.className = 'icon-btn danger'; delBtn.textContent = 'del';
+    delBtn.onclick = () => {
+      const c = loadCategories(); c[catIndex].links.splice(li, 1);
+      saveCategories(c); renderLinkList(catIndex); renderNav();
     };
 
-    row.appendChild(handle);
-    row.appendChild(labelInput);
-    row.appendChild(urlInput);
-    row.appendChild(delBtn);
+    row.appendChild(handle); row.appendChild(labelInput); row.appendChild(urlInput); row.appendChild(delBtn);
     container.appendChild(row);
 
     makeDraggable(row, li, 'links', (from, to) => {
-      const c = loadCategories();
-      const [moved] = c[catIndex].links.splice(from, 1);
-      c[catIndex].links.splice(to, 0, moved);
-      saveCategories(c);
-      renderLinkList(catIndex);
-      renderNav();
+      const c = loadCategories(); const [moved] = c[catIndex].links.splice(from, 1);
+      c[catIndex].links.splice(to, 0, moved); saveCategories(c); renderLinkList(catIndex); renderNav();
     });
   });
 }
@@ -640,57 +514,33 @@ function addLink() {
   const label = document.getElementById('new-link-label').value.trim();
   const url   = document.getElementById('new-link-url').value.trim();
   if (!label || !url) return;
-
-  const cats = loadCategories();
-  cats[editingCatIndex].links.push({ label, url });
+  const cats = loadCategories(); cats[editingCatIndex].links.push({ label, url });
   saveCategories(cats);
-
   document.getElementById('new-link-label').value = '';
   document.getElementById('new-link-url').value   = '';
-
-  renderLinkList(editingCatIndex);
-  renderNav();
+  renderLinkList(editingCatIndex); renderNav();
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  applyBackground();
-  typeGreeting();
-  updateClock();
-  renderNav();
-  initCmd();
-  hideTimerUI();
+document.addEventListener('DOMContentLoaded', async () => {
+  await bootstrap();
+  applyBackground(); typeGreeting(); updateClock(); renderNav(); initCmd(); hideTimerUI();
 
-  // Bookmarks overlay close
   document.getElementById('settings-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('settings-overlay')) closeSettings();
   });
-
-  // User settings overlay close
   document.getElementById('user-settings-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('user-settings-overlay')) closeUserSettings();
   });
-
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeSettings();
-      closeUserSettings();
-    }
+    if (e.key === 'Escape') { closeSettings(); closeUserSettings(); }
   });
 
   document.getElementById('add-cat-btn').addEventListener('click', addCategory);
-  document.getElementById('new-cat-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addCategory();
-  });
-
+  document.getElementById('new-cat-name').addEventListener('keydown', e => { if (e.key === 'Enter') addCategory(); });
   document.getElementById('add-link-btn').addEventListener('click', addLink);
-  document.getElementById('new-link-url').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addLink();
-  });
-
+  document.getElementById('new-link-url').addEventListener('keydown', e => { if (e.key === 'Enter') addLink(); });
   document.getElementById('back-btn').addEventListener('click', showCatList);
-
-  // User settings panel save/cancel
   document.getElementById('us-save-btn').addEventListener('click', saveUserSettingsFromPanel);
   document.getElementById('us-cancel-btn').addEventListener('click', closeUserSettings);
 });
